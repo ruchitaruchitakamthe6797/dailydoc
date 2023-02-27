@@ -89,8 +89,7 @@ dependencies:
   flutter_native_timezone: any
   timezone: any
   fluttertoast: ^8.0.9
-
-
+  sqflite: any 
 
 dev_dependencies:
   flutter_test:

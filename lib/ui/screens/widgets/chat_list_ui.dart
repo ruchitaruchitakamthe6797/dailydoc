@@ -80,7 +80,7 @@ class ChatListWidget extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    item!.iV!.toString(),
+                    item!.lastMessage!,
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 15,

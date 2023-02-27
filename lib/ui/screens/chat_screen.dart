@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dailydoc/models/chatlist_model/chat_list.dart';
 import 'package:dailydoc/stores/chat_list/chat_list.dart';
+import 'package:dailydoc/stores/send_message/send_message_store.dart';
 import 'package:dailydoc/ui/screens/widgets/chat_list_ui.dart';
 import 'package:dailydoc/utils/device/device_utils.dart';
 import 'package:dailydoc/utils/locale/app_localization.dart';
@@ -23,6 +24,8 @@ class _ChatScreenState extends State<ChatScreen> {
       ScrollController(initialScrollOffset: 0);
 // Store
   late ChatListStore _chatListStore;
+  late SendMessageStore _sendMessageStore;
+
   //text controllers:-----------------------------------------------------------
   final TextEditingController _textController = TextEditingController();
   @override
@@ -31,17 +34,20 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // initializing stores]
     _chatListStore = Provider.of<ChatListStore>(context);
+    _sendMessageStore = Provider.of<SendMessageStore>(context);
 
-    // check to see if already called api
-    /*if (_categoryStore.entities.isEmpty && !_categoryStore.loading) {
-      _categoryStore.getCategories();
-    }*/
-    if (!_chatListStore.loading) {
-      _fetchAllOfferList(true);
-    }
+    // if (!_chatListStore.loading) {
+    _fetchAllChatList(true);
+    // }
   }
 
-  _fetchAllOfferList(bool isRefresh) async {
+  initState() {
+    super.initState();
+    // futureAlbum = fetchAlbum();
+    _fetchAllChatList(true);
+  }
+
+  _fetchAllChatList(bool isRefresh) async {
     if (isRefresh) {
       _chatListStore.setPageNumber(1);
     } else {
@@ -71,59 +77,75 @@ class _ChatScreenState extends State<ChatScreen> {
   late Future<ChatListResponse> futureAlbum;
 
   @override
-  void initState() {
-    super.initState();
-    futureAlbum = fetchAlbum();
-  }
-
-  @override
   Widget build(BuildContext context) {
     var _width = MediaQuery.of(context).size.width;
     var _height = MediaQuery.of(context).size.height;
-    return Column(
+    return Stack(
       children: [
-        Padding(
-          padding: EdgeInsets.only(top: 20, left: 30, bottom: 15, right: 30),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(
-                  DeviceUtils.getScaledWidth(context, 10)),
-              // color: Colors.white,
-              border: Border.all(
-                width: 1,
-                color: Colors.blue,
-                style: BorderStyle.solid,
-              ),
-            ),
-            child: TextField(
-              textAlign: TextAlign.start,
-              controller: _textController,
-              keyboardType: TextInputType.text,
-              decoration: InputDecoration(
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Colors.grey,
-                ),
-                hintText: 'Search sender by name',
-                hintStyle: TextStyle(fontSize: 16),
-                border: OutlineInputBorder(
+        Column(
+          children: [
+            Padding(
+              padding:
+                  EdgeInsets.only(top: 20, left: 30, bottom: 15, right: 30),
+              child: Container(
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(
                       DeviceUtils.getScaledWidth(context, 10)),
-                  borderSide: BorderSide(
-                    width: 0,
-                    style: BorderStyle.none,
+                  // color: Colors.white,
+                  border: Border.all(
+                    width: 1,
+                    color: Colors.blue,
+                    style: BorderStyle.solid,
                   ),
                 ),
-                filled: true,
-                contentPadding: EdgeInsets.all(16),
-                fillColor: Colors.white,
+                child: TextField(
+                  textAlign: TextAlign.start,
+                  controller: _textController,
+                  keyboardType: TextInputType.text,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Colors.grey,
+                    ),
+                    hintText: 'Search sender by name',
+                    hintStyle: TextStyle(fontSize: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                          DeviceUtils.getScaledWidth(context, 10)),
+                      borderSide: BorderSide(
+                        width: 0,
+                        style: BorderStyle.none,
+                      ),
+                    ),
+                    filled: true,
+                    contentPadding: EdgeInsets.all(16),
+                    fillColor: Colors.white,
+                  ),
+                ),
               ),
             ),
-          ),
+            Expanded(child: _buildList(_width, _height)),
+            Observer(
+              builder: (context) {
+                try {
+                  return _sendMessageStore.success
+                      ? _refreshcall()
+                      : SizedBox.shrink();
+                } on Exception {
+                  return SizedBox.shrink();
+                }
+              },
+            ),
+          ],
         ),
-        Expanded(child: _buildList(_width, _height)),
       ],
     );
+  }
+
+  _refreshcall() {
+    _fetchAllChatList(true);
+
+    return SizedBox.shrink();
   }
 
   Widget _buildList(_width, _height) {

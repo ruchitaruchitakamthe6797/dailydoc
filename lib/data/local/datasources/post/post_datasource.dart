@@ -1,4 +1,6 @@
 import 'package:dailydoc/data/local/constants/db_constants.dart';
+import 'package:dailydoc/models/chat_details_model/chat_details.dart';
+import 'package:dailydoc/models/chatlist_model/chat_list.dart';
 import 'package:dailydoc/models/post/post.dart';
 import 'package:dailydoc/models/post/post_list.dart';
 import 'package:sembast/sembast.dart';
@@ -19,8 +21,8 @@ class PostDataSource {
   PostDataSource(this._db);
 
   // DB functions:--------------------------------------------------------------
-  Future<int> insert(Post post) async {
-    return await _postsStore.add(_db, post.toMap());
+  Future<int> insert(ChatListData post) async {
+    return await _postsStore.add(_db, post.toJson());
   }
 
   Future<int> count() async {
@@ -47,6 +49,25 @@ class PostDataSource {
     }).toList();
   }
 
+ Future<List<ChatListData>> getChatList({List<Filter>? filters}) async {
+    //creating finder
+    final finder = Finder(
+        filter: filters != null ? Filter.and(filters) : null,
+        sortOrders: [SortOrder(DBConstants.FIELD_ID)]);
+
+    final recordSnapshots = await _postsStore.find(
+      _db,
+      finder: finder,
+    );
+
+    // Making a List<Post> out of List<RecordSnapshot>
+    return recordSnapshots.map((snapshot) {
+      final post = ChatListData.fromJson(snapshot.value);
+      // An ID is a key of a record from the database.
+      post.sId = snapshot.key.toString();
+      return post;
+    }).toList();
+  }
   Future<PostList> getPostsFromDb() async {
 
     print('Loading from database');

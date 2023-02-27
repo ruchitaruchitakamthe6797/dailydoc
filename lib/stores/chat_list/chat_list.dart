@@ -52,10 +52,12 @@ abstract class _ChatListStore with Store {
   @action
   Future getChatList() async {
     final future = _repository.getChatList();
+    final futures = _repository.getChatListDb(1);
     fetchPostsFuture = ObservableFuture(future);
 
     try {
       future.then((postList) {
+        
         // print('########errrrrr ${postList.message}');
         success = true;
         this.chatListResponse = postList;
@@ -84,6 +86,7 @@ abstract class _ChatListStore with Store {
   void setChatListEmpty() {
     seeAllEntities = ObservableList.of([]);
   }
+
   @action
   void setPageNumber(int pageNumber) {
     pageNumber = pageNumber;

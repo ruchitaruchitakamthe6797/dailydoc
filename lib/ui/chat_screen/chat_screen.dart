@@ -1,3 +1,4 @@
+import 'package:dailydoc/stores/chat_list/chat_list.dart';
 import 'package:dailydoc/stores/conversation_list/conversation_list.dart';
 import 'package:dailydoc/stores/send_message/send_message_store.dart';
 import 'package:dailydoc/ui/chat_screen/widgets/conversation_details.dart';
@@ -32,6 +33,7 @@ class _ChatScreenDetailsState extends State<ChatScreenDetails> {
 // Store
   late ConversationListStore _conversationListStore;
   late SendMessageStore _sendMessageStore;
+  late ChatListStore _chatListStore;
 
   String? _chatID = '', chat_title = '', senderId = '', participant = '';
   String textValue = '';
@@ -42,6 +44,7 @@ class _ChatScreenDetailsState extends State<ChatScreenDetails> {
     // initializing stores]
     _conversationListStore = Provider.of<ConversationListStore>(context);
     _sendMessageStore = Provider.of<SendMessageStore>(context);
+    _chatListStore = Provider.of<ChatListStore>(context);
     final Map? arguments = ModalRoute.of(context)!.settings.arguments as Map?;
     if (arguments != null) {
       _chatID = arguments['chat_id'];
@@ -49,12 +52,12 @@ class _ChatScreenDetailsState extends State<ChatScreenDetails> {
       participant = arguments['participant'];
     }
 
-    if (!_conversationListStore.loading) {
-      _fetchAllOfferList(true);
-    }
+    // if (!_conversationListStore.loading) {
+    _fetchAllMessageList(true);
+    // }
   }
 
-  _fetchAllOfferList(bool isRefresh) async {
+  _fetchAllMessageList(bool isRefresh) async {
     if (isRefresh) {
       _conversationListStore.setPageNumber(1);
     } else {
@@ -151,36 +154,58 @@ class _ChatScreenDetailsState extends State<ChatScreenDetails> {
         ),
       ),
       body: Stack(
-        children: <Widget>[
+        children: [
           Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              Column(
+            children: <Widget>[
+              Stack(
+                alignment: Alignment.topCenter,
                 children: [
-                  Expanded(child: _buildList(_width, _height)),
-                  SizedBox(
-                    height: 55,
+                  Column(
+                    children: [
+                      Expanded(child: _buildList(_width, _height)),
+                      SizedBox(
+                        height: 55,
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Container(
+                        decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(20)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0, vertical: 4),
+                          child: Text('February 21, 2023'),
+                        )),
                   ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(20)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0, vertical: 4),
-                      child: Text('February 21, 2023'),
-                    )),
-              ),
+              _buildSendMessage(),
             ],
           ),
-          _buildSendMessage(),
+          Observer(
+            builder: (context) {
+              try {
+                return _sendMessageStore.success
+                    ? _refreshcall()
+                    : SizedBox.shrink();
+              } on Exception {
+                return SizedBox.shrink();
+              }
+            },
+          ),
         ],
       ),
     );
+  }
+
+  _refreshcall() {
+    _fetchAllChatList(true);
+    _fetchAllMessageList(true);
+
+    return SizedBox.shrink();
   }
 
   Widget _buildSendMessage() {
@@ -199,22 +224,33 @@ class _ChatScreenDetailsState extends State<ChatScreenDetails> {
     );
   }
 
+  _fetchAllChatList(bool isRefresh) async {
+    if (isRefresh) {
+      _chatListStore.setPageNumber(1);
+    } else {
+      _chatListStore.increasePageNumber();
+    }
+
+    await Future.delayed(Duration.zero, () {
+      _chatListStore.getChatList();
+    });
+  }
+
   Widget _buildList(_width, _height) {
     return Observer(builder: (context) {
       Size _size = MediaQuery.of(context).size;
 
-      return 
-      (_conversationListStore.loading &&
-            _conversationListStore.allEntities.isEmpty)
-        ? Center(child: CircularProgressIndicator())
-        :_conversationListStore.success ||
-              _conversationListStore.chatDetailsResponse != null
-          // ? _buildOfferListGride(_width, _height)
-          ? _buildOfferList(_width, _height)
+      return (_conversationListStore.loading &&
+              _conversationListStore.allEntities.isEmpty)
+          ? Center(child: CircularProgressIndicator())
+          : _conversationListStore.success ||
+                  _conversationListStore.chatDetailsResponse != null
+              // ? _buildOfferListGride(_width, _height)
+              ? _buildOfferList(_width, _height)
 
-          /* : _chatListStore.seeAllLoading
+              /* : _chatListStore.seeAllLoading
               ? LoaderWidget() */
-          : Container();
+              : Container();
     });
   }
 
